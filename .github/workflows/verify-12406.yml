@@ -1,6 +1,7 @@
 name: verify-12406
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - verify-12406-baseline
@@ -21,7 +22,9 @@ jobs:
       run: pnpm install --frozen-lockfile
     - name: Build the pnpm bundle
       shell: bash
-      run: pnpm --filter=pnpm run compile
+      run: |
+        export PATH="$PWD/node_modules/.bin:$PATH"
+        pnpm --filter=pnpm run compile
     - name: Run the regression test 3 times
       shell: bash
       run: |
