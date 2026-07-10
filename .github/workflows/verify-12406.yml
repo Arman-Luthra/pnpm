@@ -1,0 +1,39 @@
+name: verify-12406
+
+on:
+  push:
+    branches:
+      - verify-12406-baseline
+      - verify-12406-fix
+
+jobs:
+  e2e:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install pnpm and Node
+      uses: pnpm/setup@77cf06832101b3ac8c65caaf76a21643936d07a4
+      with:
+        runtime: node@24.6.0
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
+    - name: Build the pnpm bundle
+      shell: bash
+      run: pnpm --filter=pnpm run compile
+    - name: Run the regression test 3 times
+      shell: bash
+      run: |
+        cd pnpm11/pnpm
+        fails=0
+        for i in 1 2 3; do
+          echo "=== RUN $i ==="
+          if NODE_OPTIONS="--experimental-vm-modules --disable-warning=ExperimentalWarning --disable-warning=DEP0169" ../../node_modules/.bin/jest --config ../../.verify/jest.config.mjs test/errorHandler.test.ts -t 'process trees of running commands'; then
+            echo "RUN $i: PASS"
+          else
+            echo "RUN $i: FAIL"
+            fails=$((fails+1))
+          fi
+        done
+        echo "TOTAL FAILS: $fails/3"
